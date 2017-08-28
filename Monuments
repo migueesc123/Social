@@ -1,0 +1,13 @@
+let
+    Source = Table.FromColumns({Lines.FromBinary(Web.Contents("https://sv.wikipedia.org/wiki/Kategori:Fornminnen_i_Sk%C3%A5ne_l%C3%A4n"), null, null, 65001)}),
+    #"Filtered Rows" = Table.SelectRows(Source, each Text.StartsWith([Column1], "<li><a href=")),
+    #"Inserted Text Between Delimiters" = Table.AddColumn(#"Filtered Rows", "Text Between Delimiters", each Text.BetweenDelimiters([Column1], """", """", 0, 0), type text),
+    #"Removed Columns" = Table.RemoveColumns(#"Inserted Text Between Delimiters",{"Column1"}),
+    #"Added Custom" = Table.AddColumn(#"Removed Columns", "Custom", each "https://sv.wikipedia.org"&[Text Between Delimiters]),
+    #"Removed Columns1" = Table.RemoveColumns(#"Added Custom",{"Text Between Delimiters"}),
+    #"Added Custom1" = Table.AddColumn(#"Removed Columns1", "Custom.1", each Web.Page(Web.Contents([Custom]))),
+    #"Expanded Custom.1" = Table.ExpandTableColumn(#"Added Custom1", "Custom.1", {"Caption", "Source", "ClassName", "Id", "Data"}, {"Caption", "Source", "ClassName", "Id", "Data"}),
+    #"Filtered Rows1" = Table.SelectRows(#"Expanded Custom.1", each ([Source] = "Table") and ([ClassName] = "wikitable sortable jquery-tablesorter")),
+    #"Expanded Data" = Table.ExpandTableColumn(#"Filtered Rows1", "Data", {"Namn", "Lämningstyp", "Tillkomsttid", "Historisk indelning", "Plats", "Läge", "ID-nr", "Bild"}, {"Namn", "Lämningstyp", "Tillkomsttid", "Historisk indelning", "Plats", "Läge", "ID-nr", "Bild"})
+in
+    #"Expanded Data"
